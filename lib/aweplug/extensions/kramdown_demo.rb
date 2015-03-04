@@ -12,7 +12,7 @@ require 'awestruct/handlers/layout_handler'
 require 'awestruct/handlers/tilt_handler'
 require 'parallel'
 require 'faraday'
-require 'faraday_middleware' 
+require 'faraday_middleware'
 require 'base64'
 require 'nokogiri'
 require 'aweplug/helpers/searchisko_social'
@@ -23,9 +23,9 @@ require 'aweplug/cache'
 module Aweplug
   module Extensions
     module Kramdown
-      # Public: An awestruct extension for demos which have their main page 
+      # Public: An awestruct extension for demos which have their main page
       #         written in markdown. It reads the list of demos from a remote
-      #         url and generates metadata and page for each. This extension 
+      #         url and generates metadata and page for each. This extension
       #         makes use of the Aweplug::Helper::Searchisko class, please see
       #         that class for more info on options and settings for Searchisko.
       #
@@ -40,24 +40,24 @@ module Aweplug
         GITHUB_YAML = /^https?:\/\/(www\.)?github\.com\/(.*\.yaml)?$/
         # Public: Initialization method, used in the awestruct pipeline.
         #
-        # opts - A Hash of options, some being required, some not (default: {}). 
-        #        :url                - The url of demo list (see 
-        #                              https://github.com/jboss-developer/jboss-developer-demos 
+        # opts - A Hash of options, some being required, some not (default: {}).
+        #        :url                - The url of demo list (see
+        #                              https://github.com/jboss-developer/jboss-developer-demos
         #                              for metadata specification)
-        #        :layout             - The String name of the layout to use, 
+        #        :layout             - The String name of the layout to use,
         #                              omitting the extension (required).
-        #        :output_dir         - The String or Pathname of the output 
+        #        :output_dir         - The String or Pathname of the output
         #                              directory for the files (required).
         #        :site_variable      - String name of the key within the site
-        #                              containing additional metadata about 
-        #                              the guide (default: value of 
+        #                              containing additional metadata about
+        #                              the guide (default: value of
         #                              :output_dir).
-        #        :excludes           - Array of Strings containing additional 
+        #        :excludes           - Array of Strings containing additional
         #                              directory names to exclude. Defaults to [].
         #        :push_to_searchisko - A boolean controlling whether a push to
         #                              seachisko should happen. A push will not
         #                              happen when the development profile is in
-        #                              use, regardless of the value of this 
+        #                              use, regardless of the value of this
         #                              option.
         # Returns the created extension.
         def initialize opts = {}
@@ -139,12 +139,12 @@ module Aweplug
 
             validate metadata
 
-            # Not sure if it's better to do this once per class, 
+            # Not sure if it's better to do this once per class,
             # once per site, or once per invocation
-            searchisko = Aweplug::Helpers::Searchisko.new({:base_url => site.dcp_base_url, 
-                                                          :authenticate => true, 
-                                                          :searchisko_username => ENV['dcp_user'], 
-                                                          :searchisko_password => ENV['dcp_password'], 
+            searchisko = Aweplug::Helpers::Searchisko.new({:base_url => site.dcp_base_url,
+                                                          :authenticate => true,
+                                                          :searchisko_username => ENV['dcp_user'],
+                                                          :searchisko_password => ENV['dcp_password'],
                                                           :cache => @cache,
                                                           :logger => site.log_faraday,
                                                           :searchisko_warnings => site.searchisko_warnings})
@@ -154,9 +154,9 @@ module Aweplug
             unless !@push_to_searchisko || site.profile =~ /development/
               send_to_searchisko(searchisko, metadata, page, site, metadata[:converted])
             end
-            
+
             if @normalize_contributors
-              unless metadata[:author].nil? 
+              unless metadata[:author].nil?
                 metadata[:author] = normalize 'contributor_profile_by_jbossdeveloper_quickstart_author', metadata[:author], searchisko
               end
 
@@ -180,14 +180,15 @@ module Aweplug
           @faraday ||= Faraday.new do |builder|
             if (site.log_faraday.is_a?(::Logger))
               builder.response :logger, @logger = site.log_faraday
-            else 
+            else
               builder.response :logger, @logger = ::Logger.new('_tmp/faraday.log', 'daily')
             end
             builder.request :url_encoded
             builder.request :retry
+            builder.authorization 'token', ENV['github_token']
             builder.use FaradayMiddleware::Caching, @cache, {}
             builder.use FaradayMiddleware::FollowRedirects, limit: 3
-            builder.adapter Faraday.default_adapter 
+            builder.adapter Faraday.default_adapter
           end
         end
 
@@ -235,7 +236,7 @@ module Aweplug
             release = releases.find {|r| r['tag_name'] == tag} unless tag.nil?
             # If no tag, or not gound, find the first non prerelease
             release ||= releases.find {|r| r['prerelease'] != 'true'}
-            
+
             unless release.nil?
               metadata[:download] ||= release['zipball_url']
               metadata[:published] ||= DateTime.parse(release['published_at'])
@@ -283,11 +284,11 @@ module Aweplug
           metadata[:searchisko_type] = 'jbossdeveloper_demo'
 
           searchisko_hash = {
-            :sys_title => metadata[:title], 
+            :sys_title => metadata[:title],
             :level => metadata[:level],
             :tags => metadata[:technologies],
             :sys_description => metadata[:summary],
-            :sys_content => converted_html, 
+            :sys_content => converted_html,
             :sys_url_view => "#{site.base_url}#{site.ctx_root.nil? ? '/' : '/' + site.ctx_root + '/'}#{page.output_path}",
             :author => metadata[:author],
             :contributors => metadata[:contributors],
@@ -297,23 +298,23 @@ module Aweplug
             :experimental => metadata[:experimental],
             :thumbnail => metadata[:thumbnail],
             :download => metadata[:download]
-          } 
+          }
 
-          searchisko.push_content(metadata[:searchisko_type], 
-                                    metadata[:searchisko_id], 
+          searchisko.push_content(metadata[:searchisko_type],
+                                    metadata[:searchisko_id],
                                     searchisko_hash.to_json)
         end
 
-        # Private: Makes use of the sepcial Kramdown parser in aweplug to pull 
+        # Private: Makes use of the sepcial Kramdown parser in aweplug to pull
         # out metadata from the README files.
-        # 
+        #
         # content - the content to parse
         #
         # Returns a Hash of the metadata retrieved.
         def extract_metadata(content)
           document = parse_kramdown(content)
           toc = ::Kramdown::Converter::Toc.convert(document.root)
-          toc_items = toc[0].children.select { |el| el.value.options[:level] == 2 }.map do |t| 
+          toc_items = toc[0].children.select { |el| el.value.options[:level] == 2 }.map do |t|
             {:id => t.attr[:id], :text => t.value.children.first.value}
           end
           metadata = document.root.options[:metadata]
@@ -333,7 +334,7 @@ module Aweplug
         # site - The Site from awestruct.
         # path - The output path
         # content - The content to parse
-        # 
+        #
         # Returns the newly constructed Page
         def add_to_site(site, path, content)
           page = ::Awestruct::Page.new(site,
@@ -352,7 +353,7 @@ module Aweplug
         #
         # Returns the parsed Kramdown Document.
         def parse_kramdown(content)
-          ::Kramdown::Document.new content, :input => 'QuickStartParser' 
+          ::Kramdown::Document.new content, :input => 'QuickStartParser'
         end
 
         # Private: Converts hash key to symbols
