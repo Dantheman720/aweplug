@@ -185,7 +185,6 @@ module Aweplug
             end
             builder.request :url_encoded
             builder.request :retry
-            builder.authorization 'token', ENV['github_token']
             builder.use FaradayMiddleware::Caching, @cache, {}
             builder.use FaradayMiddleware::FollowRedirects, limit: 3
             builder.adapter Faraday.default_adapter
@@ -214,6 +213,7 @@ module Aweplug
         end
 
         def from_github metadata
+          @faraday.authorization :token, :token => ENV['github_token']
           metadata[:id] ||= metadata[:github_repo]
           metadata[:github_repo_url] ||= "http://github.com/#{metadata[:github_org]}/#{metadata[:github_repo]}"
           if metadata[:content].nil?
