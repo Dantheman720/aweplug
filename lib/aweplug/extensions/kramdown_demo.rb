@@ -189,6 +189,7 @@ module Aweplug
             builder.use FaradayMiddleware::FollowRedirects, limit: 3
             builder.adapter Faraday.default_adapter
           end
+          @faraday.authorization :token, :token => ENV['github_token']
         end
 
         def from_yaml url
@@ -213,7 +214,6 @@ module Aweplug
         end
 
         def from_github metadata
-          @faraday.authorization :token, :token => ENV['github_token']
           metadata[:id] ||= metadata[:github_repo]
           metadata[:github_repo_url] ||= "http://github.com/#{metadata[:github_org]}/#{metadata[:github_repo]}"
           if metadata[:content].nil?
