@@ -84,7 +84,8 @@ module Aweplug
 
         # Use defaults we have from the spreadsheet
         book['volumeInfo'].merge!((book_data_from_spreadsheet data)['volumeInfo']) { |key, v1, v2| (v2.nil? || v2.empty?) ? v1 : v2 }
-
+        
+        puts(book)
         book['volumeInfo'].keep_if {|key, value| !value.nil?}
 
         # test for required elements
