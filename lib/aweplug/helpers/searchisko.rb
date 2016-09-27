@@ -158,6 +158,9 @@ module Aweplug
       #
       # Returns a Faraday Response from the POST.
       def push_content content_type, content_id, params = {}
+        if(content_type.include?("jbossdeveloper_event"))
+          puts("Pushing Event: /content/#{content_type}/#{content_id} with parameters of #{params}")
+        end
         post "/content/#{content_type}/#{content_id}", params
       end
 
